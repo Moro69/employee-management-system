@@ -3,6 +3,7 @@ package com.moro.model.entity;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonManagedReference;
 import com.moro.model.dto.RegistrationModel;
+import com.moro.model.dto.UserDto;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -39,13 +40,11 @@ public class User implements Serializable {
     @Column(name = "user_id", nullable = false, unique = true)
     private Integer userId;
 
-    @NotNull
     @NotEmpty
     @Size(max = 45)
     @Column
     private String name;
 
-    @NotNull
     @NotEmpty
     @Email(regexp = "^([a-zA-Z0-9_\\-\\.]+)@([a-zA-Z0-9_\\-\\.]+)\\.([a-zA-Z]{2,5})$")
     @Size(max = 128)
@@ -53,7 +52,6 @@ public class User implements Serializable {
     private String email;
 
     @NotEmpty
-    @NotNull
     @Size(min = 8, max = 128)
     @Column
     @JsonIgnore
@@ -79,5 +77,10 @@ public class User implements Serializable {
         this.name = model.getName();
         this.email = model.getEmail();
         this.password = model.getPassword();
+    }
+
+    public void mapFromDto(UserDto dto) {
+        this.name = dto.getName();
+        this.email = dto.getEmail();
     }
 }

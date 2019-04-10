@@ -1,6 +1,7 @@
 package com.moro.web.rest;
 
 import com.moro.model.dto.RegistrationModel;
+import com.moro.model.dto.UserDto;
 import com.moro.model.entity.Image;
 import com.moro.model.entity.User;
 import com.moro.model.entity.VerificationToken;
@@ -30,6 +31,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import javax.validation.Valid;
 import javax.validation.constraints.PositiveOrZero;
+import java.security.Principal;
 
 @RestController
 @RequestMapping(value = "/user")
@@ -105,18 +107,15 @@ public class UserRestController {
         VerificationToken verificationToken =
                 tokenService.findByToken(token);
 
-        verificationToken.getUser().setEnabled(true);
-
-        userService.updateUser(verificationToken.getUser());
-
-        return new ResponseEntity<>(verificationToken.getUser(), HttpStatus.CREATED);
+        return ResponseEntity.ok(userService.verify(verificationToken.getUser().getUserId()));
     }
 
     @PutMapping
-    public ResponseEntity<User> updateUser(@RequestBody @Valid final User user) {
-        log.info("Updating user");
+    public ResponseEntity<User> updateUser(@RequestBody @Valid final UserDto dto,
+                                           Principal principal) {
+        log.info("Updating user: {}", dto);
 
-        return ResponseEntity.ok(userService.updateUser(user));
+        return ResponseEntity.ok(userService.updateUser(principal, dto));
     }
 
     @DeleteMapping(value = "/{userId}")
@@ -128,34 +127,35 @@ public class UserRestController {
         return new ResponseEntity(HttpStatus.OK);
     }
 
-    @PostMapping(value = "/{userId}/photo")
-    public ResponseEntity uploadUserPhoto(@PathVariable final int userId,
-                                          @RequestParam final MultipartFile photo) {
-
-        User user = userService.findUserById(userId);
-
-        if (user.getImage() == null) {
-            Image image = new Image();
-            image.setUrl(storageService.storeUserPhoto(userId, photo));
-
-            user.setImage(image);
-        } else {
-            storageService.delete(user.getImage().getUrl());
-            user.getImage().setUrl(storageService.storeUserPhoto(userId, photo));
-        }
-
-        userService.updateUser(user);
-
-        return new ResponseEntity(HttpStatus.OK);
-    }
-
-    @GetMapping(value = "/{userId}/photo")
-    public ResponseEntity downloadUserPhoto(@PathVariable final int userId) {
-        Resource file = storageService
-                .loadAsResource(userService.findUserById(userId)
-                        .getImage().getUrl());
-
-        return ResponseEntity.ok().header(HttpHeaders.CONTENT_DISPOSITION,
-                "inline; filename=\"" + file.getFilename() + "\"").body(file);
-    }
+//    @PostMapping(value = "/{userId}/photo")
+//    public ResponseEntity uploadUserPhoto(Principal principal,
+//                                          @PathVariable final int userId,
+//                                          @RequestParam final MultipartFile photo) {
+//
+//        User user = userService.findUserById(userId);
+//
+//        if (user.getImage() == null) {
+//            Image image = new Image();
+//            image.setUrl(storageService.storeUserPhoto(userId, photo));
+//
+//            user.setImage(image);
+//        } else {
+//            storageService.delete(user.getImage().getUrl());
+//            user.getImage().setUrl(storageService.storeUserPhoto(userId, photo));
+//        }
+//
+//        userService.updateUser(principal, user);
+//
+//        return new ResponseEntity(HttpStatus.OK);
+//    }
+//
+//    @GetMapping(value = "/{userId}/photo")
+//    public ResponseEntity downloadUserPhoto(@PathVariable final int userId) {
+//        Resource file = storageService
+//                .loadAsResource(userService.findUserById(userId)
+//                        .getImage().getUrl());
+//
+//        return ResponseEntity.ok().header(HttpHeaders.CONTENT_DISPOSITION,
+//                "inline; filename=\"" + file.getFilename() + "\"").body(file);
+//    }
 }

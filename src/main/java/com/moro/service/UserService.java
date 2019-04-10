@@ -1,9 +1,12 @@
 package com.moro.service;
 
 import com.moro.model.dto.RegistrationModel;
+import com.moro.model.dto.UserDto;
 import com.moro.model.entity.User;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+
+import java.security.Principal;
 
 public interface UserService {
 
@@ -15,7 +18,9 @@ public interface UserService {
 
     User addUser(RegistrationModel model);
 
-    User updateUser(User user);
+    User updateUser(Principal principal, UserDto dto);
 
     void deleteUserById(Integer userId);
+
+    User verify(Integer userId);
 }
