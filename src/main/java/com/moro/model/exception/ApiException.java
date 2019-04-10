@@ -1,7 +1,9 @@
 package com.moro.model.exception;
 
+import lombok.Getter;
 import org.springframework.http.HttpStatus;
 
+@Getter
 public class ApiException extends RuntimeException {
 
     private HttpStatus status;
