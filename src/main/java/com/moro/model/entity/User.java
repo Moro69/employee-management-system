@@ -14,6 +14,7 @@ import org.hibernate.annotations.GenericGenerator;
 import javax.persistence.CascadeType;
 import javax.persistence.Column;
 import javax.persistence.Entity;
+import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
 import javax.persistence.JoinColumn;
@@ -21,7 +22,6 @@ import javax.persistence.OneToOne;
 import javax.persistence.Table;
 import javax.validation.constraints.Email;
 import javax.validation.constraints.NotEmpty;
-import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
 import java.io.Serializable;
 
@@ -57,7 +57,7 @@ public class User implements Serializable {
     @JsonIgnore
     private String password;
 
-    @OneToOne(cascade = CascadeType.ALL)
+    @OneToOne(orphanRemoval = true, cascade = CascadeType.ALL)
     @JoinColumn(name = "image_id")
     @JsonManagedReference
     private Image image;
@@ -66,7 +66,7 @@ public class User implements Serializable {
     @JoinColumn(name = "user_role_id", nullable = false)
     private UserRole userRole;
 
-    @OneToOne
+    @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "employee_id")
     private Employee employee;
 
@@ -79,7 +79,7 @@ public class User implements Serializable {
         this.password = model.getPassword();
     }
 
-    public void mapFromDto(UserDto dto) {
+    public void mapFromDto(final UserDto dto) {
         this.name = dto.getName();
         this.email = dto.getEmail();
     }

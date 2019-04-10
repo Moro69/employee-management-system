@@ -2,7 +2,6 @@ package com.moro.service.validator;
 
 import com.moro.dao.repository.UserRepository;
 import com.moro.model.entity.User;
-import com.moro.model.enums.UserRoleEnum;
 import com.moro.model.exception.ApiException;
 import com.moro.model.exception.EntityNotFoundException;
 import lombok.extern.slf4j.Slf4j;
@@ -23,7 +22,8 @@ public class UserValidator {
         this.userRepository = userRepository;
     }
 
-    public User validateUpdateAuthorities(Principal principal, Integer userId) {
+    public User validateUpdateAuthorities(final Principal principal,
+                                          final Integer userId) {
         User user = userRepository
                 .findByEmail(principal.getName())
                 .orElseThrow(() -> new EntityNotFoundException(

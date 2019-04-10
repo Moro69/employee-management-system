@@ -6,6 +6,7 @@ import com.moro.model.dto.UserDto;
 import com.moro.model.entity.User;
 import com.moro.model.enums.UserRoleEnum;
 import com.moro.model.exception.EntityNotFoundException;
+import com.moro.service.StorageService;
 import com.moro.service.UserRoleService;
 import com.moro.service.UserService;
 import com.moro.service.validator.UserValidator;
@@ -16,6 +17,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.security.Principal;
 
@@ -30,13 +32,17 @@ public class UserServiceImpl implements UserService {
 
     private final UserValidator userValidator;
 
+    private final StorageService storageService;
+
     @Autowired
     public UserServiceImpl(final UserRoleService userRoleService,
                            final UserRepository userRepository,
-                           final UserValidator userValidator) {
+                           final UserValidator userValidator,
+                           final StorageService storageService) {
         this.userRoleService = userRoleService;
         this.userRepository = userRepository;
         this.userValidator = userValidator;
+        this.storageService = storageService;
     }
 
     @Override
@@ -77,7 +83,7 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public User updateUser(Principal principal, final UserDto dto) {
+    public User updateUser(final Principal principal, final UserDto dto) {
         log.info("Updating user: {}", dto);
 
 
@@ -92,6 +98,34 @@ public class UserServiceImpl implements UserService {
         log.info("Deleting user by id {}", userId);
 
         userRepository.delete(tryFindUserById(userId));
+    }
+
+    @Override
+    public void uploadUserPhoto(final Principal principal,
+                                final int userId,
+                                final MultipartFile photo) {
+        storageService
+                .storeUserPhoto(
+                        userValidator.validateUpdateAuthorities(principal, userId),
+                        photo);
+    }
+
+    @Override
+    public void deleteUserPhoto(final Principal principal,
+                                final int userId) {
+        User user = userValidator.validateUpdateAuthorities(principal, userId);
+
+        storageService.delete(user.getImage().getUrl());
+        user.setImage(null);
+    }
+
+    @Override
+    public byte[] getPhotoAsByteArray(final int userId) {
+        return storageService
+                .downloadAsByteArray(
+                        tryFindUserById(userId)
+                                .getImage()
+                                .getUrl());
     }
 
     @Override

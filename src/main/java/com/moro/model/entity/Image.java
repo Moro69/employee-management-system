@@ -10,6 +10,7 @@ import org.hibernate.annotations.GenericGenerator;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
+import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
 import javax.persistence.OneToOne;
@@ -40,7 +41,7 @@ public class Image implements Serializable {
     @Column(nullable = false)
     private String url;
 
-    @OneToOne(mappedBy = "image")
+    @OneToOne(mappedBy = "image", fetch = FetchType.LAZY)
     @JsonBackReference
     private User user;
 }

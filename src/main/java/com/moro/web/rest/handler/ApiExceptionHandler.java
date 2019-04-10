@@ -32,7 +32,7 @@ public class ApiExceptionHandler {
     @ExceptionHandler({StorageException.class})
     public <T extends Throwable> ResponseEntity<ApiError>
     handleStorageException(final T ex, final ServletWebRequest request) {
-        log(ex.getLocalizedMessage());
+        log(ex.getCause().getLocalizedMessage());
 
         ApiError apiError =
                 new ApiError(HttpStatus.INTERNAL_SERVER_ERROR,

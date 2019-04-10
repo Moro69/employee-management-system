@@ -50,6 +50,9 @@ public class ResourceServerConfiguration extends ResourceServerConfigurerAdapter
                 .antMatchers(HttpMethod.GET, "/user/{userId}/photo")
                 .hasAnyAuthority(AUTHORITY_ADMIN, AUTHORITY_USER)
 
+                .antMatchers(HttpMethod.DELETE, "/user/{userId}/photo")
+                .hasAnyAuthority(AUTHORITY_ADMIN, AUTHORITY_USER)
+
                 .antMatchers(HttpMethod.POST, "/user").anonymous()
 
                 .antMatchers("/**").hasAuthority(AUTHORITY_ADMIN);

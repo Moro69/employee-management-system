@@ -2,16 +2,13 @@ package com.moro.web.rest;
 
 import com.moro.model.dto.RegistrationModel;
 import com.moro.model.dto.UserDto;
-import com.moro.model.entity.Image;
 import com.moro.model.entity.User;
 import com.moro.model.entity.VerificationToken;
-import com.moro.service.StorageService;
 import com.moro.service.UserService;
 import com.moro.service.VerificationTokenService;
 import com.moro.service.impl.EmailSenderService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.core.io.Resource;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpHeaders;
@@ -43,17 +40,14 @@ public class UserRestController {
     private UserService userService;
     private EmailSenderService emailSenderService;
     private VerificationTokenService tokenService;
-    private StorageService storageService;
 
     @Autowired
     public UserRestController(final UserService userService,
                               final EmailSenderService emailSenderService,
-                              final VerificationTokenService tokenService,
-                              final StorageService storageService) {
+                              final VerificationTokenService tokenService) {
         this.userService = userService;
         this.emailSenderService = emailSenderService;
         this.tokenService = tokenService;
-        this.storageService = storageService;
     }
 
     @GetMapping
@@ -64,8 +58,7 @@ public class UserRestController {
         log.info("Finding all users");
 
         return new ResponseEntity<>(
-                userService.findAllUsers(PageRequest.of(page, pageSize)), HttpStatus.FOUND
-        );
+                userService.findAllUsers(PageRequest.of(page, pageSize)), HttpStatus.FOUND);
     }
 
     @GetMapping(value = "/{userId}")
@@ -91,7 +84,7 @@ public class UserRestController {
 
         mailMessage.setTo(ADMIN_EMAIL);
         mailMessage.setSubject("Complete Registration!");
-        mailMessage.setText("To verify account, please click here : "
+        mailMessage.setText("To verify account, please click here: "
 
                 + "http://localhost:8080/user/verify?token=" + verificationToken.getToken());
 
@@ -112,7 +105,7 @@ public class UserRestController {
 
     @PutMapping
     public ResponseEntity<User> updateUser(@RequestBody @Valid final UserDto dto,
-                                           Principal principal) {
+                                           final Principal principal) {
         log.info("Updating user: {}", dto);
 
         return ResponseEntity.ok(userService.updateUser(principal, dto));
@@ -127,35 +120,35 @@ public class UserRestController {
         return new ResponseEntity(HttpStatus.OK);
     }
 
-//    @PostMapping(value = "/{userId}/photo")
-//    public ResponseEntity uploadUserPhoto(Principal principal,
-//                                          @PathVariable final int userId,
-//                                          @RequestParam final MultipartFile photo) {
-//
-//        User user = userService.findUserById(userId);
-//
-//        if (user.getImage() == null) {
-//            Image image = new Image();
-//            image.setUrl(storageService.storeUserPhoto(userId, photo));
-//
-//            user.setImage(image);
-//        } else {
-//            storageService.delete(user.getImage().getUrl());
-//            user.getImage().setUrl(storageService.storeUserPhoto(userId, photo));
-//        }
-//
-//        userService.updateUser(principal, user);
-//
-//        return new ResponseEntity(HttpStatus.OK);
-//    }
-//
-//    @GetMapping(value = "/{userId}/photo")
-//    public ResponseEntity downloadUserPhoto(@PathVariable final int userId) {
-//        Resource file = storageService
-//                .loadAsResource(userService.findUserById(userId)
-//                        .getImage().getUrl());
-//
-//        return ResponseEntity.ok().header(HttpHeaders.CONTENT_DISPOSITION,
-//                "inline; filename=\"" + file.getFilename() + "\"").body(file);
-//    }
+    @PostMapping(value = "/{userId}/photo")
+    public ResponseEntity uploadUserPhoto(final Principal principal,
+                                          @PathVariable final int userId,
+                                          @RequestParam final MultipartFile photo) {
+        log.info("Uploading photo for user with id {} by {}", userId, principal);
+
+        userService.uploadUserPhoto(principal, userId, photo);
+
+        return new ResponseEntity(HttpStatus.OK);
+    }
+
+    @GetMapping(value = "/{userId}/photo")
+    public ResponseEntity<byte[]> downloadUserPhoto(@PathVariable final int userId,
+                                                    final Principal principal) {
+        log.info("Downloading photo of user with id {} by {}", userId, principal);
+
+        return ResponseEntity
+                .ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "inline")
+                .body(userService.getPhotoAsByteArray(userId));
+    }
+
+    @DeleteMapping(value = "/{userId}/photo")
+    public ResponseEntity deleteUserPhoto(final Principal principal,
+                                          @PathVariable final int userId) {
+        log.info("Deleting photo of user with id {} by {}", userId, principal);
+
+        userService.deleteUserPhoto(principal, userId);
+
+        return new ResponseEntity(HttpStatus.OK);
+    }
 }

@@ -1,6 +1,5 @@
 package com.moro.model.dto;
 
-import com.moro.model.entity.UserRole;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
