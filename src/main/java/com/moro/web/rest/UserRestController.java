@@ -26,8 +26,11 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
+import javax.servlet.ServletOutputStream;
+import javax.servlet.http.HttpServletResponse;
 import javax.validation.Valid;
 import javax.validation.constraints.PositiveOrZero;
+import java.io.IOException;
 import java.security.Principal;
 
 @RestController
@@ -132,14 +135,21 @@ public class UserRestController {
     }
 
     @GetMapping(value = "/{userId}/photo")
-    public ResponseEntity<byte[]> downloadUserPhoto(@PathVariable final int userId,
-                                                    final Principal principal) {
+    public void downloadUserPhoto(@PathVariable final int userId,
+                                                    final Principal principal,
+                                                    HttpServletResponse response) throws IOException {
         log.info("Downloading photo of user with id {} by {}", userId, principal);
 
-        return ResponseEntity
-                .ok()
-                .header(HttpHeaders.CONTENT_DISPOSITION, "inline")
-                .body(userService.getPhotoAsByteArray(userId));
+        byte[] photoBytes = userService.getPhotoAsByteArray(userId);
+
+        response.setHeader(HttpHeaders.CONTENT_DISPOSITION, "inline");
+        response.setHeader(HttpHeaders.CACHE_CONTROL, "max-age=600");
+        response.setHeader(HttpHeaders.PRAGMA, "public");
+
+        ServletOutputStream responseOutputStream = response.getOutputStream();
+        responseOutputStream.write(photoBytes);
+        responseOutputStream.flush();
+        responseOutputStream.close();
     }
 
     @DeleteMapping(value = "/{userId}/photo")
