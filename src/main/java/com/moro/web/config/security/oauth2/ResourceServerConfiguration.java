@@ -38,6 +38,9 @@ public class ResourceServerConfiguration extends ResourceServerConfigurerAdapter
         http.requestMatchers()
                 .antMatchers("/**")
                 .and().authorizeRequests()
+                .antMatchers("**audit**")
+                .hasAuthority(AUTHORITY_ADMIN)
+
                 .antMatchers(HttpMethod.GET, "/department**", "/employee**")
                 .hasAnyAuthority(AUTHORITY_ADMIN, AUTHORITY_USER)
 

@@ -4,6 +4,7 @@ import com.moro.dao.repository.EmployeeRepository;
 import com.moro.model.entity.Employee;
 import com.moro.model.exception.EntityNotFoundException;
 import com.moro.model.search.EmployeeFacetedSearch;
+import com.moro.service.EmployeeAuditService;
 import com.moro.service.EmployeeService;
 import com.moro.service.validator.EmployeeValidator;
 import lombok.extern.slf4j.Slf4j;
@@ -20,10 +21,13 @@ import org.springframework.transaction.annotation.Transactional;
 public class EmployeeServiceImpl implements EmployeeService {
 
     private final EmployeeRepository employeeRepository;
+    private final EmployeeAuditService employeeAuditService;
 
     @Autowired
-    public EmployeeServiceImpl(final EmployeeRepository employeeRepository) {
+    public EmployeeServiceImpl(final EmployeeRepository employeeRepository,
+                               final EmployeeAuditService employeeAuditService) {
         this.employeeRepository = employeeRepository;
+        this.employeeAuditService = employeeAuditService;
     }
 
     @Override
@@ -36,6 +40,8 @@ public class EmployeeServiceImpl implements EmployeeService {
     @Override
     public Employee updateEmployee(final Employee employee) {
         log.info("Updating employee with id {}", employee.getEmployeeId());
+
+        employeeAuditService.save(tryFindEmployeeById(employee.getEmployeeId()));
 
         return employeeRepository.saveAndFlush(employee);
     }

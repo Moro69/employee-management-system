@@ -136,8 +136,8 @@ public class UserRestController {
 
     @GetMapping(value = "/{userId}/photo")
     public void downloadUserPhoto(@PathVariable final int userId,
-                                                    final Principal principal,
-                                                    HttpServletResponse response) throws IOException {
+                                  final Principal principal,
+                                  final HttpServletResponse response) throws IOException {
         log.info("Downloading photo of user with id {} by {}", userId, principal);
 
         byte[] photoBytes = userService.getPhotoAsByteArray(userId);

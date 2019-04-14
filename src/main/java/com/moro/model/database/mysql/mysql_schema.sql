@@ -2,7 +2,7 @@
 -- -----------------------------------------------------
 -- Schema emp_manage
 -- -----------------------------------------------------
-CREATE SCHEMA IF NOT EXISTS `emp_manage` DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci ;
+CREATE SCHEMA IF NOT EXISTS `emp_manage` ;
 USE `emp_manage` ;
 
 -- -----------------------------------------------------
@@ -34,8 +34,7 @@ CREATE TABLE IF NOT EXISTS `emp_manage`.`department` (
                                                        `phone_number` VARCHAR(45) NULL DEFAULT NULL,
                                                        `formation_date` DATE NOT NULL,
                                                        PRIMARY KEY (`department_id`),
-                                                       UNIQUE INDEX `department_id_UNIQUE` (`department_id` ASC),
-                                                       UNIQUE INDEX `name_UNIQUE` (`name` ASC))
+                                                       UNIQUE INDEX `department_id_UNIQUE` (`department_id` ASC))
   ENGINE = InnoDB
   AUTO_INCREMENT = 1
   DEFAULT CHARACTER SET = utf8mb4
@@ -206,6 +205,30 @@ CREATE TABLE IF NOT EXISTS `emp_manage`.`verification_token` (
                                                                    ON DELETE NO ACTION
                                                                    ON UPDATE NO ACTION)
   ENGINE = InnoDB;
+
+
+-- -----------------------------------------------------
+-- Table `emp_manage`.`employee_audit`
+-- -----------------------------------------------------
+CREATE TABLE IF NOT EXISTS `emp_manage`.`employee_audit` (
+                                                           `audit_id` INT NOT NULL AUTO_INCREMENT,
+                                                           `employee_id` INT(11) NOT NULL,
+                                                           `name` VARCHAR(128) NOT NULL,
+                                                           `phone_number` VARCHAR(45) NULL DEFAULT NULL,
+                                                           `email` VARCHAR(45) NOT NULL,
+                                                           `position` VARCHAR(45) NOT NULL,
+                                                           `salary` INT(11) NOT NULL,
+                                                           `passport_identification_number` VARCHAR(45) NOT NULL,
+                                                           `modified_by` VARCHAR(45) NULL,
+                                                           `modified_date` DATETIME NULL,
+                                                           PRIMARY KEY (`audit_id`),
+                                                           UNIQUE INDEX `employee_audit_id_UNIQUE` (`audit_id` ASC))
+  ENGINE = InnoDB
+  AUTO_INCREMENT = 1
+  DEFAULT CHARACTER SET = utf8mb4
+  COLLATE = utf8mb4_0900_ai_ci;
+
+
 
 INSERT INTO department (department_id, name, description, phone_number, formation_date)
 VALUES (1, 'Default', 'Department of unallocated employees', '+999999999999', '1111-11-11');
