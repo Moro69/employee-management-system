@@ -9,6 +9,7 @@ import java.time.LocalDateTime;
 @Getter
 @NoArgsConstructor
 public class ApiError {
+
     private LocalDateTime timeStamp = LocalDateTime.now();
 
     private HttpStatus status;
