@@ -2,11 +2,14 @@ package com.moro.service.impl;
 
 import com.moro.dao.repository.UserRepository;
 import com.moro.model.dto.RegistrationModel;
+import com.moro.model.dto.UserDto;
 import com.moro.model.entity.User;
 import com.moro.model.enums.UserRoleEnum;
 import com.moro.model.exception.EntityNotFoundException;
+import com.moro.service.StorageService;
 import com.moro.service.UserRoleService;
 import com.moro.service.UserService;
+import com.moro.service.validator.UserValidator;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -14,6 +17,9 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
+
+import java.security.Principal;
 
 @Service
 @Transactional
@@ -24,11 +30,19 @@ public class UserServiceImpl implements UserService {
 
     private final UserRepository userRepository;
 
+    private final UserValidator userValidator;
+
+    private final StorageService storageService;
+
     @Autowired
     public UserServiceImpl(final UserRoleService userRoleService,
-                           final UserRepository userRepository) {
+                           final UserRepository userRepository,
+                           final UserValidator userValidator,
+                           final StorageService storageService) {
         this.userRoleService = userRoleService;
         this.userRepository = userRepository;
+        this.userValidator = userValidator;
+        this.storageService = storageService;
     }
 
     @Override
@@ -69,8 +83,12 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public User updateUser(final User user) {
-        log.info("Updating user");
+    public User updateUser(final Principal principal, final UserDto dto) {
+        log.info("Updating user: {}", dto);
+
+
+        User user = userValidator.validateUpdateAuthorities(principal, dto.getUserId());
+        user.mapFromDto(dto);
 
         return userRepository.saveAndFlush(user);
     }
@@ -80,6 +98,44 @@ public class UserServiceImpl implements UserService {
         log.info("Deleting user by id {}", userId);
 
         userRepository.delete(tryFindUserById(userId));
+    }
+
+    @Override
+    public void uploadUserPhoto(final Principal principal,
+                                final int userId,
+                                final MultipartFile photo) {
+        storageService
+                .storeUserPhoto(
+                        userValidator.validateUpdateAuthorities(principal, userId),
+                        photo);
+    }
+
+    @Override
+    public void deleteUserPhoto(final Principal principal,
+                                final int userId) {
+        User user = userValidator.validateUpdateAuthorities(principal, userId);
+
+        storageService.delete(user.getImage().getUrl());
+        user.setImage(null);
+    }
+
+    @Override
+    public byte[] getPhotoAsByteArray(final int userId) {
+        return storageService
+                .downloadAsByteArray(
+                        tryFindUserById(userId)
+                                .getImage()
+                                .getUrl());
+    }
+
+    @Override
+    public User verify(final Integer userId) {
+        log.info("Verifying user by id {}", userId);
+
+        User user = tryFindUserById(userId);
+        user.setEnabled(true);
+
+        return userRepository.saveAndFlush(user);
     }
 
     private User tryFindUserById(final Integer userId) {

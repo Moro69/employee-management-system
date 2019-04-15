@@ -1,13 +1,13 @@
 package com.moro.service;
 
-import org.springframework.core.io.Resource;
+import com.moro.model.entity.User;
 import org.springframework.web.multipart.MultipartFile;
 
 public interface StorageService {
 
-    String storeUserPhoto(int userId, MultipartFile file);
+    void storeUserPhoto(User user, MultipartFile file);
 
-    Resource loadAsResource(String filename);
+    byte[] downloadAsByteArray(String filename);
 
     void delete(String filename);
 }

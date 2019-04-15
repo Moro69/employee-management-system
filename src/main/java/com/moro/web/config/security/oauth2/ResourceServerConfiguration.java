@@ -38,6 +38,9 @@ public class ResourceServerConfiguration extends ResourceServerConfigurerAdapter
         http.requestMatchers()
                 .antMatchers("/**")
                 .and().authorizeRequests()
+                .antMatchers("**audit**")
+                .hasAuthority(AUTHORITY_ADMIN)
+
                 .antMatchers(HttpMethod.GET, "/department**", "/employee**")
                 .hasAnyAuthority(AUTHORITY_ADMIN, AUTHORITY_USER)
 
@@ -48,6 +51,9 @@ public class ResourceServerConfiguration extends ResourceServerConfigurerAdapter
                 .hasAnyAuthority(AUTHORITY_ADMIN, AUTHORITY_USER)
 
                 .antMatchers(HttpMethod.GET, "/user/{userId}/photo")
+                .hasAnyAuthority(AUTHORITY_ADMIN, AUTHORITY_USER)
+
+                .antMatchers(HttpMethod.DELETE, "/user/{userId}/photo")
                 .hasAnyAuthority(AUTHORITY_ADMIN, AUTHORITY_USER)
 
                 .antMatchers(HttpMethod.POST, "/user").anonymous()

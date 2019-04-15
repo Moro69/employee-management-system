@@ -1,16 +1,14 @@
 package com.moro.web.rest;
 
 import com.moro.model.dto.RegistrationModel;
-import com.moro.model.entity.Image;
+import com.moro.model.dto.UserDto;
 import com.moro.model.entity.User;
 import com.moro.model.entity.VerificationToken;
-import com.moro.service.StorageService;
 import com.moro.service.UserService;
 import com.moro.service.VerificationTokenService;
 import com.moro.service.impl.EmailSenderService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.core.io.Resource;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpHeaders;
@@ -28,8 +26,12 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
+import javax.servlet.ServletOutputStream;
+import javax.servlet.http.HttpServletResponse;
 import javax.validation.Valid;
 import javax.validation.constraints.PositiveOrZero;
+import java.io.IOException;
+import java.security.Principal;
 
 @RestController
 @RequestMapping(value = "/user")
@@ -41,17 +43,14 @@ public class UserRestController {
     private UserService userService;
     private EmailSenderService emailSenderService;
     private VerificationTokenService tokenService;
-    private StorageService storageService;
 
     @Autowired
     public UserRestController(final UserService userService,
                               final EmailSenderService emailSenderService,
-                              final VerificationTokenService tokenService,
-                              final StorageService storageService) {
+                              final VerificationTokenService tokenService) {
         this.userService = userService;
         this.emailSenderService = emailSenderService;
         this.tokenService = tokenService;
-        this.storageService = storageService;
     }
 
     @GetMapping
@@ -62,8 +61,7 @@ public class UserRestController {
         log.info("Finding all users");
 
         return new ResponseEntity<>(
-                userService.findAllUsers(PageRequest.of(page, pageSize)), HttpStatus.FOUND
-        );
+                userService.findAllUsers(PageRequest.of(page, pageSize)), HttpStatus.FOUND);
     }
 
     @GetMapping(value = "/{userId}")
@@ -89,7 +87,7 @@ public class UserRestController {
 
         mailMessage.setTo(ADMIN_EMAIL);
         mailMessage.setSubject("Complete Registration!");
-        mailMessage.setText("To verify account, please click here : "
+        mailMessage.setText("To verify account, please click here: "
 
                 + "http://localhost:8080/user/verify?token=" + verificationToken.getToken());
 
@@ -105,18 +103,15 @@ public class UserRestController {
         VerificationToken verificationToken =
                 tokenService.findByToken(token);
 
-        verificationToken.getUser().setEnabled(true);
-
-        userService.updateUser(verificationToken.getUser());
-
-        return new ResponseEntity<>(verificationToken.getUser(), HttpStatus.CREATED);
+        return ResponseEntity.ok(userService.verify(verificationToken.getUser().getUserId()));
     }
 
     @PutMapping
-    public ResponseEntity<User> updateUser(@RequestBody @Valid final User user) {
-        log.info("Updating user");
+    public ResponseEntity<User> updateUser(@RequestBody @Valid final UserDto dto,
+                                           final Principal principal) {
+        log.info("Updating user: {}", dto);
 
-        return ResponseEntity.ok(userService.updateUser(user));
+        return ResponseEntity.ok(userService.updateUser(principal, dto));
     }
 
     @DeleteMapping(value = "/{userId}")
@@ -129,33 +124,41 @@ public class UserRestController {
     }
 
     @PostMapping(value = "/{userId}/photo")
-    public ResponseEntity uploadUserPhoto(@PathVariable final int userId,
+    public ResponseEntity uploadUserPhoto(final Principal principal,
+                                          @PathVariable final int userId,
                                           @RequestParam final MultipartFile photo) {
+        log.info("Uploading photo for user with id {} by {}", userId, principal);
 
-        User user = userService.findUserById(userId);
-
-        if (user.getImage() == null) {
-            Image image = new Image();
-            image.setUrl(storageService.storeUserPhoto(userId, photo));
-
-            user.setImage(image);
-        } else {
-            storageService.delete(user.getImage().getUrl());
-            user.getImage().setUrl(storageService.storeUserPhoto(userId, photo));
-        }
-
-        userService.updateUser(user);
+        userService.uploadUserPhoto(principal, userId, photo);
 
         return new ResponseEntity(HttpStatus.OK);
     }
 
     @GetMapping(value = "/{userId}/photo")
-    public ResponseEntity downloadUserPhoto(@PathVariable final int userId) {
-        Resource file = storageService
-                .loadAsResource(userService.findUserById(userId)
-                        .getImage().getUrl());
+    public void downloadUserPhoto(@PathVariable final int userId,
+                                  final Principal principal,
+                                  final HttpServletResponse response) throws IOException {
+        log.info("Downloading photo of user with id {} by {}", userId, principal);
 
-        return ResponseEntity.ok().header(HttpHeaders.CONTENT_DISPOSITION,
-                "inline; filename=\"" + file.getFilename() + "\"").body(file);
+        byte[] photoBytes = userService.getPhotoAsByteArray(userId);
+
+        response.setHeader(HttpHeaders.CONTENT_DISPOSITION, "inline");
+        response.setHeader(HttpHeaders.CACHE_CONTROL, "max-age=600");
+        response.setHeader(HttpHeaders.PRAGMA, "public");
+
+        ServletOutputStream responseOutputStream = response.getOutputStream();
+        responseOutputStream.write(photoBytes);
+        responseOutputStream.flush();
+        responseOutputStream.close();
+    }
+
+    @DeleteMapping(value = "/{userId}/photo")
+    public ResponseEntity deleteUserPhoto(final Principal principal,
+                                          @PathVariable final int userId) {
+        log.info("Deleting photo of user with id {} by {}", userId, principal);
+
+        userService.deleteUserPhoto(principal, userId);
+
+        return new ResponseEntity(HttpStatus.OK);
     }
 }
